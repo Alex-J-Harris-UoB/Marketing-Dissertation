@@ -2,10 +2,6 @@ import os
 import io
 import numpy
 from pathlib import Path
-from pdfminer.converter import TextConverter
-from pdfminer.pdfinterp import PDFPageInterpreter
-from pdfminer.pdfinterp import PDFResourceManager
-from pdfminer.pdfpage import PDFPage
 import nltk
 import ntpath
 from nltk.stem import PorterStemmer
@@ -16,35 +12,20 @@ from collections import Counter
 import pandas as pd
 directory = '/Users/wise/Documents/Diss Files'
 
-#Returns Text from PDF
-def extract_text_from_pdf(pdf_path):
-    resource_manager = PDFResourceManager()
-    fake_file_handle = io.StringIO()
-    converter = TextConverter(resource_manager, fake_file_handle)
-    page_interpreter = PDFPageInterpreter(resource_manager, converter)
-    with open(pdf_path, 'rb') as fh:
-        for page in PDFPage.get_pages(fh, caching=True, check_extractable=True):
-            page_interpreter.process_page(page)
-        text = fake_file_handle.getvalue()
-    converter.close()
-    fake_file_handle.close()
-    if text:
-        return text
-
 #Returns names in text
 def name_finder(text):
     name_set = set()
     tokens = nltk.word_tokenize(text.lower())
-    tagged = nltk.pos_tag(tokens)
-    tree = nltk.chunk.ne_chunk(tagged)
-    for t in tree:
-        if hasattr(t, 'label'):
-            if t.label() == "PERSON" or "LOCATION" or "GPE":
-                c = 0
-                while c < len(t):
-                    name_set.add(t[c][0])
-                    c += 1
-    return name_set
+    token_tag = nltk.pos_tag(token_tag)
+    chunky = nltk.chunk.ne_chunk(token_tag)
+    for c in chunky:
+        if hasattr(c, 'label'):
+            if c.label() == "PERSON" or "LOCATION" or "GPE":
+                i = 0
+                while i < len(c):
+                    return_names.add(c[i][0])
+                    i += 1
+    return return_names
 
 #Filter Noise out of Text (punctuation, single letters, common noise)
 def filter_speak(text):
@@ -87,7 +68,7 @@ def ngrams_gen(word_list, n):
         gram_list.append(str(gram))
     return gram_list
 
-#Look for website changes and export string from updated website
+#Return most common words and phrases from text
 def keyword_finder(directory):
     all_the_words = []
     content = []
@@ -117,6 +98,7 @@ def keyword_finder(directory):
     print("--- most common four word phrases ---")
     print(four_word_phrases)
 
+#Return snippets of a specified length around your chosen keyword(s)
 def keyword_snippet_extractor(directory, keywords):
     content = []
     for file in os.scandir(directory):
@@ -142,6 +124,7 @@ def keyword_snippet_extractor(directory, keywords):
                         #content.append([author_name, text_name, pos, word, snippet])
     return content
 
+#Return snippets of a specified length around your chosen keyphrase(s)
 def keyphrase_snippet_extractor(directory, keyphrase):
     content = []
     keyphrase_list = [kp.split() for kp in keyphrase]
@@ -167,6 +150,7 @@ def keyphrase_snippet_extractor(directory, keyphrase):
                                     content.append([author_name, text_name, pos, (' '.join(phrase)), snippet_string])
     return(content)
 
+#Return CSVs from pandas dataframe for additional analysis
 def csv_gen():
     keyphrase = ["social media"]
     keyword = ["culture"]
@@ -174,6 +158,7 @@ def csv_gen():
     df = pd.DataFrame(keyword_snippet_extractor(directory, keyword), columns=['author', 'content name', 'position', 'phrase', 'snippet'])
     df.to_csv("keywords.csv")
 
+#Count lines innit
 def line_counter(directory):
     counter = 0
     for file in os.scandir(directory):
@@ -182,7 +167,7 @@ def line_counter(directory):
             with open(file) as f:
                 nonempty_lines = [line.strip("\n") for line in f if line != "\n"]
                 print(len(nonempty_lines))
-                keywords = {"white", "black", "jew", "kike", "nigger"}
+                keywords = {""}
                 for keyword in keywords:
                     keyword_lines = [line for line in nonempty_lines if keyword in line.split()]
                     counter += len(keyword_lines)
@@ -195,8 +180,3 @@ keyword_snippet_extractor(directory, keywords)
 keyphrase = ["free speech", "freedom of speech"]
 #keyphrase_snippet_extractor(directory, keyphrase)
 #csv_gen()
-
-#keyphrase snippet extractor notes:
-#load this sucka up with loads of data
-#produce the CSV and finish coding it
-#write like a bat out of hell
